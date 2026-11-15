@@ -1,6 +1,7 @@
 using src.Crypto.Symmetric.Abstractions;
 
 namespace src.Crypto.Symmetric.Algorithms.RC5;
+
 public sealed class RC5KeyExpansion : IKeyExpansion<ulong[]>
 {
     private const ulong ShiftL = 8;

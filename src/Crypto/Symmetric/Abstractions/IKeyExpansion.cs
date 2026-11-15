@@ -1,7 +1,6 @@
-namespace src.Crypto.Symmetric.Abstractions
+namespace src.Crypto.Symmetric.Abstractions;
+
+public interface IKeyExpansion<TSubKeys>
 {
-    public interface IKeyExpansion<TSubKeys>
-    {
-        TSubKeys GenerateRoundKeys(byte[] key);
-    }
+    TSubKeys GenerateRoundKeys(byte[] key);
 }

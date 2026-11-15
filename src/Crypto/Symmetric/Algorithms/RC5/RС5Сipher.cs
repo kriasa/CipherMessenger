@@ -1,6 +1,7 @@
 using src.Crypto.Symmetric.Abstractions;
 
 namespace src.Crypto.Symmetric.Algorithms.RC5;
+
 public sealed class RC5Cipher : ISymmetricCipher
 {
     private const int BitPerByte = 8;

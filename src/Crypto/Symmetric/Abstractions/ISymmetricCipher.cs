@@ -1,10 +1,9 @@
-namespace src.Crypto.Symmetric.Abstractions
+namespace src.Crypto.Symmetric.Abstractions;
+
+public interface ISymmetricCipher
 {
-    public interface ISymmetricCipher
-    {
-        int BlockSize { get; }
-        void SetKey(byte[] key);
-        byte[] Encrypt(byte[] block);
-        byte[] Decrypt(byte[] block);
-    }
+    int BlockSize { get; }
+    void SetKey(byte[] key);
+    byte[] Encrypt(byte[] block);
+    byte[] Decrypt(byte[] block);
 }
