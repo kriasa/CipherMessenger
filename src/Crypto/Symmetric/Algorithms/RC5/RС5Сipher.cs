@@ -7,7 +7,7 @@ public sealed class RC5Cipher : ISymmetricCipher
     private const int BitPerByte = 8;
     private readonly RC5Parameters _parameters;
     private readonly IKeyExpansion<ulong[]> _keyExpansion;
-    private ulong[] _S;
+    private ulong[]? _S;
     public int BlockSize => _parameters.BlockSize;
     private ulong[] S => _S ?? throw new InvalidOperationException("key is not set");
     public RC5Cipher(RC5Parameters parameters)

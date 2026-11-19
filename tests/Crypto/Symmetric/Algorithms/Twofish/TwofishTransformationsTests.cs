@@ -1,4 +1,4 @@
-using src.Crypto.Algorithms.Twofish;
+using src.Crypto.Symmetric.Algorithms.Twofish;
 
 namespace CipherMessenger.Tests.Crypto.Algorithms.Twofish;
 
@@ -25,14 +25,12 @@ public class TwofishTransformationsTests
     [Fact]
     public void QPermut_ShouldReturnExpectedValueForZero()
     {
-        // Act
         byte q0 = TwofishTransformations.QPermut(
             TwofishConstants.Q0Tables, 0x00);
 
         byte q1 = TwofishTransformations.QPermut(
             TwofishConstants.Q1Tables, 0x00);
 
-        // Assert
         Assert.Equal(0xA9, q0);
         Assert.Equal(0x75, q1);
     }
@@ -47,10 +45,8 @@ public class TwofishTransformationsTests
         uint expectedA,
         uint expectedB)
     {
-        // Act
         var result = TwofishTransformations.PHT(a, b);
 
-        // Assert
         Assert.Equal(expectedA, result.Item1);
         Assert.Equal(expectedB, result.Item2);
     }
@@ -58,14 +54,11 @@ public class TwofishTransformationsTests
     [Fact]
     public void PHT_ShouldUseUnchecked32BitArithmetic()
     {
-        // Arrange
         const uint a = 0xFFFFFFFF;
         const uint b = 1;
 
-        // Act
         var result = TwofishTransformations.PHT(a, b);
 
-        // Assert
         Assert.Equal(0u, result.Item1);
         Assert.Equal(1u, result.Item2);
     }
@@ -74,7 +67,7 @@ public class TwofishTransformationsTests
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
-    public void SBoxTransforms_ShouldCreateFourPermutationSBoxes(int k)
+    public void SBoxTransforms_ShouldCreateFourMdsContributionTables(int k)
     {
         // Arrange
         uint[] keyWords =
@@ -86,17 +79,16 @@ public class TwofishTransformationsTests
         ];
 
         // Act
-        byte[][] sBoxes = TwofishTransformations.SBoxTransforms(
+        uint[][] sBoxes = TwofishTransformations.SBoxTransforms(
             keyWords,
             k);
 
         // Assert
         Assert.Equal(4, sBoxes.Length);
 
-        foreach (byte[] sBox in sBoxes)
+        foreach (uint[] sBox in sBoxes)
         {
             Assert.Equal(256, sBox.Length);
-            Assert.Equal(256, sBox.Distinct().Count());
         }
     }
 
@@ -116,7 +108,7 @@ public class TwofishTransformationsTests
             0x0F0E0D0C
         ];
 
-        byte[][] sBoxes = TwofishTransformations.SBoxTransforms(
+        uint[][] sBoxes = TwofishTransformations.SBoxTransforms(
             keyWords,
             4);
 
@@ -126,6 +118,79 @@ public class TwofishTransformationsTests
 
         // Assert
         Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(0x00000000u)]
+    [InlineData(0x12345678u)]
+    [InlineData(0xFFFFFFFFu)]
+    [InlineData(0xA1B2C3D4u)]
+    public void H_ShouldMatchDirectMdsCalculation(uint value)
+    {
+        // Arrange
+        uint[] keyWords =
+        [
+            0x03020100,
+            0x07060504,
+            0x0B0A0908,
+            0x0F0E0D0C
+        ];
+
+        const int k = 4;
+
+        uint[][] sBoxes = TwofishTransformations.SBoxTransforms(
+            keyWords,
+            k);
+
+        // Act
+        uint actual = TwofishTransformations.H(value, sBoxes);
+        uint expected = CalculateHDirectly(value, keyWords, k);
+
+        // Assert
+        Assert.Equal(expected, actual);
+    }
+
+    private static uint CalculateHDirectly(
+        uint value,
+        uint[] keyWords,
+        int k)
+    {
+        var order = TwofishConstants.GetOrderQ(k);
+        Span<byte> y = stackalloc byte[4];
+
+        for (int i = 0; i < 4; ++i)
+        {
+            byte currentX = (byte)(value >> (8 * i));
+
+            for (int j = 0; j < k; ++j)
+            {
+                var table = order[i][j] == 1
+                    ? TwofishConstants.Q1Tables
+                    : TwofishConstants.Q0Tables;
+
+                byte transformed = TwofishTransformations.QPermut(
+                    table,
+                    currentX);
+
+                currentX = (byte)(
+                    transformed ^ (byte)(keyWords[j] >> (8 * i)));
+            }
+
+            var finalTable = order[i][k] == 1
+                ? TwofishConstants.Q1Tables
+                : TwofishConstants.Q0Tables;
+
+            y[i] = TwofishTransformations.QPermut(
+                finalTable,
+                currentX);
+        }
+
+        var result = TwofishMath.MultiplyMatrix(
+            TwofishConstants.MDS,
+            y,
+            TwofishConstants.MDSPoly);
+
+        return TwofishMath.PackageLE(result, 0);
     }
 
     public static IEnumerable<object[]> GetQTables =>

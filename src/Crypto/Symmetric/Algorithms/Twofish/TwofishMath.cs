@@ -1,4 +1,4 @@
-namespace src.Crypto.Algorithms.Twofish;
+namespace src.Crypto.Symmetric.Algorithms.Twofish;
 
 public static class TwofishMath
 {
@@ -33,6 +33,16 @@ public static class TwofishMath
             {
                 result [i] = Add(result[i], Multiply(matrix[i,j], x[j], module));
             }
+        }
+        return result;
+    }
+    public static uint MultiplyMdsColumn(byte value, int column)
+    {
+        uint result = 0;
+        for (int row = 0; row < 4; ++row)
+        {
+            var product = Multiply(TwofishConstants.MDS[row, column], value, TwofishConstants.MDSPoly);
+            result |= (uint)product << (8 * row);
         }
         return result;
     }

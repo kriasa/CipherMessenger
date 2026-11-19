@@ -1,4 +1,3 @@
-
 using Xunit;
 using src.Crypto.Symmetric.Algorithms.RC5;
 

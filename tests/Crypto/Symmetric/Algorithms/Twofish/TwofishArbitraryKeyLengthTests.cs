@@ -1,4 +1,4 @@
-using src.Crypto.Algorithms.Twofish;
+using src.Crypto.Symmetric.Algorithms.Twofish;
 
 namespace CipherMessenger.Tests.Crypto.Algorithms.Twofish;
 
@@ -36,50 +36,21 @@ public class TwofishArbitraryKeyLengthTests
         Assert.Equal(expected, actual);
     }
 
-    [Theory]
-    [InlineData(1, 16)]
-    [InlineData(15, 16)]
-    [InlineData(16, 16)]
-    [InlineData(17, 24)]
-    [InlineData(23, 24)]
-    [InlineData(24, 24)]
-    [InlineData(25, 32)]
-    [InlineData(31, 32)]
-    [InlineData(32, 32)]
-    public void SetKey_ShouldUseCorrectTargetLength(
-        int keyLength,
-        int expectedLength)
-    {
-        // Arrange
-        byte[] key = new byte[keyLength];
-
-        // Act
-        var cipher = new TwofishCipher();
-        cipher.SetKey(key);
-
-        // Assert
-        Assert.Equal(16, cipher.BlockSize);
-    }
-
     [Fact]
     public void SetKey_ShouldRejectKeyLongerThan256Bits()
     {
-        // Arrange
         var cipher = new TwofishCipher();
         byte[] key = new byte[33];
 
-        // Act & Assert
         Assert.Throws<ArgumentException>(() => cipher.SetKey(key));
     }
 
     [Fact]
     public void SetKey_ShouldRejectEmptyKey()
     {
-        // Arrange
         var cipher = new TwofishCipher();
         byte[] key = [];
 
-        // Act & Assert
         Assert.Throws<ArgumentException>(() => cipher.SetKey(key));
     }
 

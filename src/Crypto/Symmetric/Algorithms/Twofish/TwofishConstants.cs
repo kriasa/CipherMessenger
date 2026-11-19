@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace src.Crypto.Algorithms.Twofish;
+namespace src.Crypto.Symmetric.Algorithms.Twofish;
 
 public static class TwofishConstants
 {

@@ -1,4 +1,4 @@
-using src.Crypto.Algorithms.Twofish;
+using src.Crypto.Symmetric.Algorithms.Twofish;
 
 namespace CipherMessenger.Tests.Crypto.Algorithms.Twofish;
 

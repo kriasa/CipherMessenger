@@ -1,43 +1,41 @@
 using src.Crypto.Symmetric.Abstractions;
 
-namespace src.Crypto.Algorithms.Twofish;
+namespace src.Crypto.Symmetric.Algorithms.Twofish;
 
-public sealed class TwofishKeyExpansion : IKeyExpansion<(uint[] K, byte[][] S)>
+public sealed class TwofishKeyExpansion : IKeyExpansion<(uint[] K, uint[][] S)>
 {
     /// <summary>p = 2^24 + 2^16 + 2^8 + 2^1.</summary>
     private const uint P = 0x01010101u;
     private const int TotalRoundKeyPairs = TwofishConstants.Rounds + 4;
     private int _k;
-    private  byte[][]? _sBoxS;
-    private byte[][]? _sBoxMe;
-    private byte[][]? _sBoxMo;
-    public (uint[] K, byte[][] S) GenerateRoundKeys(byte[] key)
+    public (uint[] K, uint[][] S) GenerateRoundKeys(byte[] key)
     {
         ArgumentNullException.ThrowIfNull(key);
         if (!TwofishConstants.AllowedKeySizes.Contains(key.Length)) key = BuildKey(key);
 
         _k = key.Length / 8;
-        GetBoxes(key);
+        var (S, Me, Mo) = GetBoxes(key);
 
         var K = new uint[2 * (TotalRoundKeyPairs)];
         for (int i = 0; i < TotalRoundKeyPairs; ++i)
         {
             var idx = (uint)i;
 
-            uint Ai = TwofishTransformations.H(2U *idx * P, _sBoxMe);
-            var paramB = TwofishTransformations.H((2U * idx + 1) * P, _sBoxMo);
+            uint Ai = TwofishTransformations.H(2U *idx * P, Me);
+            var paramB = TwofishTransformations.H((2U * idx + 1) * P, Mo);
             uint Bi = TwofishMath.Rol32(paramB,8);
             var(a, b) = TwofishTransformations.PHT(Ai, Bi);
             (K[2* i], K[2 * i + 1]) = (a, TwofishMath.Rol32(b, 9));
         }
-        return (K, _sBoxS);
+        return (K, S);
     }
-    private void GetBoxes(byte[] key)
+    private (uint[][] S, uint[][] Me, uint[][] Mo) GetBoxes(byte[] key)
     {
         var (Me, Mo, S) = KeySchedule(key);
-        _sBoxMe = TwofishTransformations.SBoxTransforms(Me, _k);
-        _sBoxMo = TwofishTransformations.SBoxTransforms(Mo, _k);
-        _sBoxS = TwofishTransformations.SBoxTransforms(S, _k);
+        var sBoxMe = TwofishTransformations.SBoxTransforms(Me, _k);
+        var sBoxMo = TwofishTransformations.SBoxTransforms(Mo, _k);
+        var sBoxS = TwofishTransformations.SBoxTransforms(S, _k);
+        return (sBoxS, sBoxMe, sBoxMo);
     }
     private (uint[] Me, uint[] Mo, uint[] S) KeySchedule(byte[] key)
     {

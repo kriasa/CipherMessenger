@@ -1,15 +1,15 @@
 using src.Crypto.Symmetric.Abstractions;
 
-namespace src.Crypto.Algorithms.Twofish;
+namespace src.Crypto.Symmetric.Algorithms.Twofish;
 
 public sealed class TwofishCipher : ISymmetricCipher
 {
     private const int SubkeysOffset = 8;
     public int BlockSize => TwofishConstants.BlockSizeByte;
-    private readonly IKeyExpansion<(uint[] K, byte[][] S)> _keyExpansion;
+    private readonly IKeyExpansion<(uint[] K, uint[][] S)> _keyExpansion;
 
     private uint[]? _k;
-    private byte[][]? _sBox;
+    private uint[][]? _sBox;
 
     public TwofishCipher() => _keyExpansion = new TwofishKeyExpansion();
     public void SetKey(byte[] key)
@@ -19,7 +19,7 @@ public sealed class TwofishCipher : ISymmetricCipher
             throw new ArgumentException("Incorrect block length");
         (_k, _sBox) = _keyExpansion.GenerateRoundKeys(key);
     }
-    public uint G(uint X, byte[][] box) => TwofishTransformations.G(X, box);
+    public uint G(uint X, uint[][] box) => TwofishTransformations.G(X, box);
     public byte[] Encrypt(byte[] block)
     {
         ArgumentNullException.ThrowIfNull(block);
@@ -34,7 +34,7 @@ public sealed class TwofishCipher : ISymmetricCipher
 
         for (int r = 0; r < TwofishConstants.Rounds; ++r)
         {
-            var (F0, F1) = F(R[0], R[1],r);
+            var (F0, F1) = F(R[0], R[1], r);
             (F0, F1) = (F0 + _k[2 * r + SubkeysOffset], F1 + _k[2 * r + SubkeysOffset + 1]);
 
             (R[0], R[2]) = (TwofishMath.Ror32(R[2] ^ F0, 1), R[0]);

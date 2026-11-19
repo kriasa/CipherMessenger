@@ -1,27 +1,20 @@
-namespace src.Crypto.Algorithms.Twofish;
+namespace src.Crypto.Symmetric.Algorithms.Twofish;
 
 public static class TwofishTransformations
 {
-    public static uint G (uint X, byte[][] box) => H(X, box);
-    public static uint H(uint X, byte[][] box)
+    public static uint G (uint X, uint[][] box) => H(X, box);
+    public static uint H(uint X, uint[][] box)
     {
-        Span<byte> y = stackalloc byte[4];
-
-        for (int i = 0; i < 4; ++i)
-        {
-            y[i] = box[i][(byte)(X >> (8 * i))];
-        }
-        var z = TwofishMath.MultiplyMatrix(TwofishConstants.MDS, y, TwofishConstants.MDSPoly);
-        return TwofishMath.PackageLE(z, 0);
+        return box[0][(byte)X] ^ box[1][(byte)(X >> 8)] ^ box[2][(byte)(X >> 16)] ^ box[3][(byte)(X >> 24)];
     }
-    public static byte[][] SBoxTransforms(uint[] box, int k)
+    public static uint[][] SBoxTransforms(uint[] box, int k)
     {
         var order = TwofishConstants.GetOrderQ(k);
-        var SBoxes = new byte[4][];
+        var SBoxes = new uint[4][];
 
         for (int i = 0; i < 4; ++i)
         {
-            SBoxes[i] = new byte[256];
+            SBoxes[i] = new uint[256];
             for (int x = 0; x < 256; ++x)
             {
                 var currentX = (byte)x;
@@ -33,8 +26,8 @@ public static class TwofishTransformations
                 }
                 var finalTable = order[i][k] == 1 ? TwofishConstants.Q1Tables : TwofishConstants.Q0Tables;
                 currentX = QPermut(finalTable, currentX);
-                
-                SBoxes[i][x] = (byte)currentX;
+
+                SBoxes[i][x] = TwofishMath.MultiplyMdsColumn(currentX, i);
             }
         }
         return SBoxes;
