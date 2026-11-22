@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Crypto/Crypto.csproj" />
+    <Project Path="src/Contracts/Contracts.csproj" />
+    <Project Path="src/Server/Server.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CipherMessenger.Tests.csproj" />

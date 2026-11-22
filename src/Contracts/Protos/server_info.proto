@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "src.Contracts";
+
+package chat.v1;
+
+service ServerInfoService {
+  rpc GetInfo (GetInfoRequest) returns (GetInfoReply);
+}
+
+message GetInfoRequest {}
+
+message GetInfoReply {
+  string version = 1;
+  google.protobuf.Timestamp server_time_utc = 2;
+  bool database_available = 3;
+}
