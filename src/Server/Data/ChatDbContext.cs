@@ -1,9 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using src.Server.Data.Entities;
 
 namespace src.Server.Data;
 
 public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options) : DbContext(options)
 {
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Session> Sessions => Set<Session>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

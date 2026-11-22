@@ -7,13 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddServerOptions(builder.Configuration)
     .AddPersistence(builder.Configuration)
+    .AddServerAuth()
     .AddServerGrpc(builder.Environment);
 
 var app = builder.Build();
 
 await DatabaseInitializer.InitializeAsync(app.Services, app.Lifetime.ApplicationStopping);
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapGrpcService<ServerInfoGrpcService>();
-if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService();
+app.MapGrpcService<AuthGrpcService>();
+if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService().AllowAnonymous();
 
 app.Run();

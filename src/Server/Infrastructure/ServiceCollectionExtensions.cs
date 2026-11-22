@@ -1,8 +1,11 @@
 using Grpc.AspNetCore.Server;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using src.Server.Configuration;
 using src.Server.Data;
+using src.Server.Security;
 
 namespace src.Server.Infrastructure;
 
@@ -13,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatedOptions<DatabaseOptions>(configuration, DatabaseOptions.Section);
         services.AddValidatedOptions<RabbitMqOptions>(configuration, RabbitMqOptions.Section);
         services.AddValidatedOptions<LimitsOptions>(configuration, LimitsOptions.Section);
+        services.AddValidatedOptions<SecurityOptions>(configuration, SecurityOptions.Section);
         return services;
     }
 
@@ -22,6 +26,18 @@ public static class ServiceCollectionExtensions
             ?? throw new InvalidOperationException("Connection string not specified - ConnectionStrings:Postgres");
 
         services.AddDbContext<ChatDbContext>(o => o.UseNpgsql(connectionString));
+        return services;
+    }
+    public static IServiceCollection AddServerAuth(this IServiceCollection services)
+    {
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<PasswordHasher>();
+
+        services.AddAuthentication(SessionAuthenticationHandler.SchemeName)
+            .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>(SessionAuthenticationHandler.SchemeName, _ => { });
+
+        services.AddAuthorization(o =>
+            o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
         return services;
     }
 

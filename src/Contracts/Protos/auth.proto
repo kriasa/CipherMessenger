@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "src.Contracts";
+
+package chat.v1;
+
+service AuthService {
+  rpc Register (RegisterRequest) returns (RegisterReply);
+  rpc Login (LoginRequest) returns (LoginReply);
+  rpc Logout (LogoutRequest) returns (LogoutReply);
+}
+
+message RegisterRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message RegisterReply {
+  string user_id = 1;
+  string login = 2;
+}
+
+message LoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message LoginReply {
+  string token = 1;
+  google.protobuf.Timestamp expires_at_utc = 2;
+  string user_id = 3;
+  string login = 4;
+}
+
+message LogoutRequest {}
+
+message LogoutReply {}

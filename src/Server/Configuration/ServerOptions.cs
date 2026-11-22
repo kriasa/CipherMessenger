@@ -49,3 +49,10 @@ public sealed class LimitsOptions
     [Range(1, 24 * 365)]
     public int SessionHours { get; set; } = 24;
 }
+public sealed class SecurityOptions
+{
+    public const string Section = "Security";
+
+    [Range(100_000, 10_000_000)]
+    public int Pbkdf2Iterations { get; set; } = 600_000;
+}
