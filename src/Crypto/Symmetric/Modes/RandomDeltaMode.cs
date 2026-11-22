@@ -32,6 +32,9 @@ public sealed class RandomDeltaMode : ICipherModeStrategy
         if (BigInteger.GreatestCommonDivisor(deltaVal, modulus) != BigInteger.One) throw new ArgumentException("gcd(delta,2^{8*halfSize}) = 1");
 
         int blockCount = data.Length / blockSize;
+        BigInteger endIndex = (BigInteger)blockIndexOffset + blockCount;
+
+        if (blockIndexOffset < 0 || endIndex > modulus) throw new ArgumentOutOfRangeException(nameof(blockIndexOffset));
         var res = new byte[data.Length];
 
         Parallel.For(0, blockCount, i =>

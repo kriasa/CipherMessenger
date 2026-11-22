@@ -1,4 +1,5 @@
 using src.Crypto.Symmetric.Abstractions;
+using System.Numerics;
 
 namespace src.Crypto.Symmetric.Modes;
 
@@ -18,6 +19,10 @@ public sealed class CtrMode : ICipherModeStrategy
 
         int blockSize = cipher.BlockSize;
         int blockCount = data.Length / blockSize;
+        BigInteger modulus = BigInteger.One << (blockSize * 8);
+        BigInteger endIndex = (BigInteger)blockIndexOffset + blockCount;
+
+        if (blockIndexOffset < 0 || endIndex > modulus) throw new ArgumentOutOfRangeException(nameof(blockIndexOffset));
         var res = new byte[data.Length];
 
         Parallel.For(0, blockCount, i =>

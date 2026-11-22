@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../src/CipherMessenger.csproj" />
+    <ProjectReference Include="../src/Crypto/Crypto.csproj" />
   </ItemGroup>
 
 </Project>

@@ -37,7 +37,7 @@ public sealed class SymmetricCryptoContext<TCipher> where TCipher : ISymmetricCi
             ArgumentNullException.ThrowIfNull(iv);
             if (iv.Length != blockSize) throw new ArgumentException("len(IV) = len(block)", nameof(iv));
         }
-        _iv = iv!;
+        _iv = iv?.ToArray() ?? Array.Empty<byte>();
         _extraParams = extraParams ?? Array.Empty<object>();
     }
     public void Encrypt(byte[] data, out byte[] res) => res = EncryptCore(data);

@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/CipherMessenger.csproj" />
+    <Project Path="src/Crypto/Crypto.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CipherMessenger.Tests.csproj" />
