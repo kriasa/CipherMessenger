@@ -9,7 +9,7 @@ using src.Server.Security;
 
 namespace src.Server.Services;
 
-public sealed class ContactGrpcService(ChatDbContext db, TimeProvider time, ILogger<ContactGrpcService> logger)
+public sealed class ContactGrpcService(ChatDbContext db, RoomLifecycle rooms, TimeProvider time, ILogger<ContactGrpcService> logger)
     : ContactService.ContactServiceBase
 {
     public override async Task<SendContactRequestReply> SendRequest(SendContactRequestRequest request, ServerCallContext context)
@@ -108,7 +108,8 @@ public sealed class ContactGrpcService(ChatDbContext db, TimeProvider time, ILog
             .ExecuteDeleteAsync(context.CancellationToken);
 
         if (deleted == 0) throw new RpcException(new Status(StatusCode.NotFound, "Contact not found"));
-        logger.LogInformation("Connection removed: {Me} x {Other}", me, otherId);
+        var closedRooms = await rooms.CloseOpenRoomsBetweenAsync(me, otherId, context.CancellationToken);
+        logger.LogInformation("Connection removed: {Me} x {Other}, close rooms: {Rooms}", me, otherId, closedRooms);
         return new RemoveContactReply();
     }
 
@@ -150,7 +151,7 @@ public sealed class ContactGrpcService(ChatDbContext db, TimeProvider time, ILog
     }
 
     private static Guid ParseUserId(string? value)
-        => Guid.TryParse(value, out var id) ? id : throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid user identifier"));
+         => Guid.TryParse(value, out var id) ? id : throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid user identifier"));
 
     private static ContactInfo ToInfo(Guid userId, string login, ContactStatus status, DateTime sinceUtc) => new()
     {

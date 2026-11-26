@@ -8,6 +8,7 @@ builder.Services
     .AddServerOptions(builder.Configuration)
     .AddPersistence(builder.Configuration)
     .AddServerAuth()
+    .AddRoomServices()
     .AddServerGrpc(builder.Environment);
 
 var app = builder.Build();
@@ -20,6 +21,7 @@ app.UseAuthorization();
 app.MapGrpcService<ServerInfoGrpcService>();
 app.MapGrpcService<AuthGrpcService>();
 app.MapGrpcService<ContactGrpcService>();
+app.MapGrpcService<RoomGrpcService>();
 if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService().AllowAnonymous();
 
 app.Run();

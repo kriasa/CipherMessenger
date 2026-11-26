@@ -21,7 +21,7 @@ enum ContactStatus {
 }
 
 message ContactInfo {
-  string user_id = 1;  // id собеседника
+  string user_id = 1;
   string login = 2;
   ContactStatus status = 3;
   google.protobuf.Timestamp since_utc = 4;

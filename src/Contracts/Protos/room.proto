@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "src.Contracts";
+
+package chat.v1;
+
+service RoomService {
+  rpc CreateRoom (CreateRoomRequest) returns (RoomInfo);
+  rpc JoinRoom (RoomIdRequest) returns (RoomInfo);
+  rpc LeaveRoom (RoomIdRequest) returns (LeaveRoomReply);
+  rpc CloseRoom (RoomIdRequest) returns (CloseRoomReply);
+  rpc GetRoom (RoomIdRequest) returns (RoomInfo);
+  rpc ListRooms (ListRoomsRequest) returns (ListRoomsReply);
+}
+
+enum RoomCipherMode {
+  ROOM_CIPHER_MODE_UNSPECIFIED = 0;
+  ROOM_CIPHER_MODE_ECB = 1;
+  ROOM_CIPHER_MODE_CBC = 2;
+  ROOM_CIPHER_MODE_PCBC = 3;
+  ROOM_CIPHER_MODE_CFB = 4;
+  ROOM_CIPHER_MODE_OFB = 5;
+  ROOM_CIPHER_MODE_CTR = 6;
+  ROOM_CIPHER_MODE_RANDOM_DELTA = 7;
+}
+
+enum RoomPaddingMode {
+  ROOM_PADDING_MODE_UNSPECIFIED = 0;
+  ROOM_PADDING_MODE_ZEROS = 1;
+  ROOM_PADDING_MODE_ANSI_X923 = 2;
+  ROOM_PADDING_MODE_PKCS7 = 3;
+  ROOM_PADDING_MODE_ISO10126 = 4;
+}
+
+enum RoomState {
+  ROOM_STATE_UNSPECIFIED = 0;
+  ROOM_STATE_OPEN = 1;
+  ROOM_STATE_CLOSED = 2;
+}
+
+message CipherSettings {
+  reserved 1;
+
+  RoomCipherMode mode = 2;
+  RoomPaddingMode padding = 3;
+
+  oneof algorithm_parameters {
+    Rc5Settings rc5 = 4;
+    TwofishSettings twofish = 5;
+  }
+}
+
+message Rc5Settings {
+  uint32 key_size_bytes = 1;
+  uint32 word_size_bits = 2; 
+  uint32 rounds = 3; 
+}
+
+message TwofishSettings {
+  uint32 key_size_bytes = 1;  // 16, 24 или 32
+}
+
+message CreateRoomRequest {
+  string peer_user_id = 1;
+  CipherSettings cipher = 2;
+}
+
+message RoomIdRequest {
+  string room_id = 1;
+}
+
+message RoomMemberInfo {
+  string user_id = 1;
+  string login = 2;
+  bool connected = 3;
+}
+
+message RoomInfo {
+  string room_id = 1;
+  RoomState state = 2;
+  CipherSettings cipher = 3;
+  string creator_user_id = 4;
+  RoomMemberInfo me = 5;
+  RoomMemberInfo peer = 6;
+  google.protobuf.Timestamp created_at_utc = 7;
+  google.protobuf.Timestamp closed_at_utc = 8;
+}
+
+message LeaveRoomReply {}
+
+message CloseRoomReply {}
+
+message ListRoomsRequest {
+  bool include_closed = 1;
+}
+
+message ListRoomsReply {
+  repeated RoomInfo rooms = 1;
+}
