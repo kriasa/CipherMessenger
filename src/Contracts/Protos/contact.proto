@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "src.Contracts";
+
+package chat.v1;
+
+service ContactService {
+  rpc SendRequest (SendContactRequestRequest) returns (SendContactRequestReply);
+  rpc RespondToRequest (RespondToContactRequestRequest) returns (RespondToContactRequestReply);
+  rpc RemoveContact (RemoveContactRequest) returns (RemoveContactReply);
+  rpc ListContacts (ListContactsRequest) returns (ListContactsReply);
+}
+
+enum ContactStatus {
+  CONTACT_STATUS_UNSPECIFIED = 0;
+  CONTACT_STATUS_ACCEPTED = 1; 
+  CONTACT_STATUS_INCOMING = 2;
+  CONTACT_STATUS_OUTGOING = 3;
+}
+
+message ContactInfo {
+  string user_id = 1;  // id собеседника
+  string login = 2;
+  ContactStatus status = 3;
+  google.protobuf.Timestamp since_utc = 4;
+}
+
+message SendContactRequestRequest {
+  string login = 1;
+}
+
+message SendContactRequestReply {
+  ContactInfo contact = 1;
+}
+
+message RespondToContactRequestRequest {
+  string user_id = 1;
+  bool accept = 2;
+}
+
+message RespondToContactRequestReply {
+  ContactInfo contact = 1;
+}
+
+message RemoveContactRequest {
+  string user_id = 1;
+}
+
+message RemoveContactReply {}
+
+message ListContactsRequest {}
+
+message ListContactsReply {
+  repeated ContactInfo contacts = 1;
+}

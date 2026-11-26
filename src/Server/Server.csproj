@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>src.Server</RootNamespace>
     <AssemblyName>Server</AssemblyName>
+    <UserSecretsId>chat-server-cw</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

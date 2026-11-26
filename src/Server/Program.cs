@@ -19,6 +19,7 @@ app.UseAuthorization();
 
 app.MapGrpcService<ServerInfoGrpcService>();
 app.MapGrpcService<AuthGrpcService>();
+app.MapGrpcService<ContactGrpcService>();
 if (app.Environment.IsDevelopment()) app.MapGrpcReflectionService().AllowAnonymous();
 
 app.Run();

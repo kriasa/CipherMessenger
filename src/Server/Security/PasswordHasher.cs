@@ -18,14 +18,11 @@ public sealed class PasswordHasher(IOptions<SecurityOptions> options)
         var hash = Derive(password, salt, iterations);
         return (hash, salt, iterations);
     }
-
     public bool Verify(string password, byte[] salt, int iterations, byte[] expectedHash)
     {
         var actual = Derive(password, salt, iterations);
         return CryptographicOperations.FixedTimeEquals(actual, expectedHash);
     }
-
     public void BurnTime(string password) => Derive(password, DummySalt, options.Value.Pbkdf2Iterations);
-
     private static byte[] Derive(string password, byte[] salt, int iterations) => Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, HashSize);
 }
