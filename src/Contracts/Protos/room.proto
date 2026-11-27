@@ -12,6 +12,8 @@ service RoomService {
   rpc LeaveRoom (RoomIdRequest) returns (LeaveRoomReply);
   rpc CloseRoom (RoomIdRequest) returns (CloseRoomReply);
   rpc GetRoom (RoomIdRequest) returns (RoomInfo);
+  rpc SubmitDhPublic (SubmitDhPublicRequest) returns (RoomInfo);
+  rpc RestartKeyExchange (RoomIdRequest) returns (RoomInfo);
   rpc ListRooms (ListRoomsRequest) returns (ListRoomsReply);
 }
 
@@ -41,14 +43,12 @@ enum RoomState {
 }
 
 message CipherSettings {
-  reserved 1;
-
-  RoomCipherMode mode = 2;
-  RoomPaddingMode padding = 3;
+  RoomCipherMode mode = 1;
+  RoomPaddingMode padding = 2;
 
   oneof algorithm_parameters {
-    Rc5Settings rc5 = 4;
-    TwofishSettings twofish = 5;
+    Rc5Settings rc5 = 3;
+    TwofishSettings twofish = 4;
   }
 }
 
@@ -59,12 +59,24 @@ message Rc5Settings {
 }
 
 message TwofishSettings {
-  uint32 key_size_bytes = 1;  // 16, 24 или 32
+  uint32 key_size_bytes = 1;
+}
+
+message RoomDhParameters {
+  bytes p = 1;
+  bytes g = 2;
 }
 
 message CreateRoomRequest {
   string peer_user_id = 1;
   CipherSettings cipher = 2;
+  RoomDhParameters dh = 3;
+}
+
+message SubmitDhPublicRequest {
+  string room_id = 1;
+  uint32 key_epoch = 2;
+  bytes public_value = 3;
 }
 
 message RoomIdRequest {
@@ -75,6 +87,7 @@ message RoomMemberInfo {
   string user_id = 1;
   string login = 2;
   bool connected = 3;
+  bytes dh_public = 4; 
 }
 
 message RoomInfo {
@@ -86,6 +99,8 @@ message RoomInfo {
   RoomMemberInfo peer = 6;
   google.protobuf.Timestamp created_at_utc = 7;
   google.protobuf.Timestamp closed_at_utc = 8;
+  RoomDhParameters dh = 9;
+  uint32 key_epoch = 10;
 }
 
 message LeaveRoomReply {}

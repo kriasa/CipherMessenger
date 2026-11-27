@@ -26,6 +26,9 @@ public sealed class Room
     public int KeySizeBytes { get; init; }
     public int? Rc5WordBits { get; init; }
     public int? Rc5Rounds { get; init; }
+    public required byte[] DhPrime { get; init; }
+    public required byte[] DhGenerator { get; init; }
+    public int KeyEpoch { get; set; } = 1;
     public DateTime CreatedAtUtc { get; init; }
     public DateTime? ClosedAtUtc { get; set; }
     public List<RoomMember> Members { get; init; } = [];
@@ -38,6 +41,7 @@ public sealed class RoomMember
     public Guid UserId { get; init; }
     public User User { get; init; } = null!;
     public bool IsConnected { get; set; }
+    public byte[]? DhPublicValue { get; set; }
     public DateTime? JoinedAtUtc { get; set; }
     public DateTime? LeftAtUtc { get; set; }
 }

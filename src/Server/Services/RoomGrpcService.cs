@@ -1,3 +1,4 @@
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public sealed class RoomGrpcService(
         if (peerId == me) throw Invalid("You can't create a chat with yourself.");
 
         CipherSettingsValidator.Validate(request.Cipher);
+        var (dhPrime, dhGenerator) = DhValidator.ValidateParameters(request.Dh);
 
         var (a, b) = ContactLink.OrderPair(me, peerId);
         var isContact = await db.ContactLinks.AsNoTracking().AnyAsync(c => c.UserAId == a && c.UserBId == b && c.Status == ContactLinkStatus.Accepted, ct);
@@ -40,6 +42,8 @@ public sealed class RoomGrpcService(
             KeySizeBytes = keySize,
             Rc5WordBits = wordBits,
             Rc5Rounds = rounds,
+            DhPrime = dhPrime,
+            DhGenerator = dhGenerator,
             CreatedAtUtc = time.GetUtcNow().UtcDateTime,
             Members =
             {
@@ -93,7 +97,59 @@ public sealed class RoomGrpcService(
         await lifecycle.CloseAsync([room.Id], ct);
         return new CloseRoomReply();
     }
+    public override async Task<RoomInfo> SubmitDhPublic(SubmitDhPublicRequest request, ServerCallContext context)
+    {
+        var me = context.GetUserId();
+        var ct = context.CancellationToken;
 
+        var room = await LoadAsync(ParseId(request.RoomId, "room_id"), me, ct);
+        if (room.Status != RoomStatus.Open) throw new RpcException(new Status(StatusCode.FailedPrecondition, "The room is closed"));
+        if (request.KeyEpoch != (uint)room.KeyEpoch) throw new RpcException(new Status(StatusCode.FailedPrecondition,"Update the room state and repeat"));
+
+        var publicValue = DhValidator.ValidatePublicValue(request.PublicValue, room.DhPrime);
+        var epoch = room.KeyEpoch;
+
+        var updated = await db.RoomMembers
+            .Where(m => m.RoomId == room.Id && m.UserId == me && m.DhPublicValue == null && m.Room.KeyEpoch == epoch  && m.Room.Status == RoomStatus.Open)
+            .ExecuteUpdateAsync(s => s.SetProperty(m => m.DhPublicValue, publicValue), ct);
+
+        if (updated == 0)
+        {
+            var current = await LoadAsync(room.Id, me, ct);
+            var alreadySent = current.KeyEpoch == epoch && current.Members.First(m => m.UserId == me).DhPublicValue is not null;
+            throw alreadySent
+                ? new RpcException(new Status(StatusCode.AlreadyExists, "You have already submitted an open value in this era"))
+                : new RpcException(new Status(StatusCode.Aborted, "The state of the room has changed; please repeat your request"));
+        }
+
+        return ToInfo(await LoadAsync(room.Id, me, ct), me);
+    }
+
+    public override async Task<RoomInfo> RestartKeyExchange(RoomIdRequest request, ServerCallContext context)
+    {
+        var me = context.GetUserId();
+        var ct = context.CancellationToken;
+
+        var room = await LoadAsync(ParseId(request.RoomId, "room_id"), me, ct);
+        if (room.Status != RoomStatus.Open)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "The room is closed"));
+
+        await using (var tx = await db.Database.BeginTransactionAsync(ct))
+        {
+            await db.Rooms
+                .Where(r => r.Id == room.Id && r.Status == RoomStatus.Open)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.KeyEpoch, r => r.KeyEpoch + 1), ct);
+
+            await db.RoomMembers
+                .Where(m => m.RoomId == room.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(m => m.DhPublicValue, (byte[]?)null), ct);
+
+            await tx.CommitAsync(ct);
+        }
+
+        logger.LogInformation("Key exchange has been restarted in the room {Room}, {User}", room.Id, me);
+        return ToInfo(await LoadAsync(room.Id, me, ct), me);
+    }
     public override async Task<RoomInfo> GetRoom(RoomIdRequest request, ServerCallContext context)
     {
         var me = context.GetUserId();
@@ -137,6 +193,12 @@ public sealed class RoomGrpcService(
             State = room.Status == RoomStatus.Open ? RoomState.Open : RoomState.Closed,
             Cipher = ToSettings(room),
             CreatorUserId = room.CreatorId.ToString(),
+            Dh = new RoomDhParameters
+            {
+                P = ByteString.CopyFrom(room.DhPrime),
+                G = ByteString.CopyFrom(room.DhGenerator)
+            },
+            KeyEpoch = (uint)room.KeyEpoch,
             Me = ToMember(mine),
             Peer = ToMember(peer),
             CreatedAtUtc = ToTimestamp(room.CreatedAtUtc)
